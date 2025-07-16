@@ -1,4 +1,4 @@
-const API_URL = "http://31.97.171.200:3004/api"; // URL do seu backend
+const API_URL = "http://31.97.171.200:5000/api"; // URL do seu backend
 
 export const fetchServices = async () => {
 	const response = await fetch(`${API_URL}/services`);
