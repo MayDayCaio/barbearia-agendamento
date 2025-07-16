@@ -1,29 +1,29 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext"; // Importar
+import { AuthProvider } from "./context/AuthContext";
 import HomePage from "./pages/HomePage";
 import AdminPage from "./pages/AdminPage";
-import AuthPage from "./pages/AuthPage"; // Importar
-import ProfilePage from "./pages/ProfilePage"; // Importar
+import AuthPage from "./pages/AuthPage";
+import ProfilePage from "./pages/ProfilePage";
 import Header from "./components/ui/Header";
+import Footer from "./components/ui/Footer"; // 1. Importar o novo componente
 
 function App() {
 	return (
 		<AuthProvider>
-			{" "}
-			{/* Envolver com o Provider */}
 			<Router>
-				<div className="App bg-gray-900">
+				{/* 2. Ajustar o layout para garantir que o rodapé fica em baixo */}
+				<div className="flex flex-col min-h-screen bg-gray-900">
 					<Header />
-					<main>
+					<main className="flex-grow">
 						<Routes>
 							<Route path="/" element={<HomePage />} />
 							<Route path="/admin" element={<AdminPage />} />
-							<Route path="/auth" element={<AuthPage />} /> {/* Nova rota */}
-							<Route path="/profile" element={<ProfilePage />} />{" "}
-							{/* Nova rota */}
+							<Route path="/auth" element={<AuthPage />} />
+							<Route path="/profile" element={<ProfilePage />} />
 						</Routes>
 					</main>
+					<Footer /> {/* 3. Adicionar o componente do rodapé */}
 				</div>
 			</Router>
 		</AuthProvider>

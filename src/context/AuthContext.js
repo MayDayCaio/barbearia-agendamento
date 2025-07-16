@@ -1,23 +1,23 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import * as authApi from "../services/authApi";
-import { jwtDecode } from "jwt-decode"; // Usar uma biblioteca para descodificar o token
+// CORREÇÃO AQUI: A importação mudou de { jwtDecode } para jwtDecode
+import jwtDecode from "jwt-decode";
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
 	const [user, setUser] = useState(null);
-	const [token, setToken] = useState(localStorage.getItem("token"));
+	const [token, setToken] = useState(() => localStorage.getItem("token"));
 
 	useEffect(() => {
-		if (token) {
+		const storedToken = localStorage.getItem("token");
+		if (storedToken) {
 			try {
-				const decodedUser = jwtDecode(token);
-				// Verifica se o token expirou
+				const decodedUser = jwtDecode(storedToken);
 				if (decodedUser.exp * 1000 > Date.now()) {
 					setUser({ name: decodedUser.name, id: decodedUser.id });
-					localStorage.setItem("token", token);
+					setToken(storedToken);
 				} else {
-					// Token expirado
 					logout();
 				}
 			} catch (error) {
@@ -25,10 +25,11 @@ export const AuthProvider = ({ children }) => {
 				logout();
 			}
 		}
-	}, [token]);
+	}, []);
 
 	const login = async (credentials) => {
 		const data = await authApi.login(credentials);
+		localStorage.setItem("token", data.token);
 		setToken(data.token);
 		setUser(data.user);
 		return data;
@@ -36,6 +37,7 @@ export const AuthProvider = ({ children }) => {
 
 	const register = async (userData) => {
 		const data = await authApi.register(userData);
+		localStorage.setItem("token", data.token);
 		setToken(data.token);
 		setUser(data.user);
 		return data;

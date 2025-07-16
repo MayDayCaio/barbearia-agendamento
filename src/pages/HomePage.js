@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import * as api from "../services/api"; // Importa tudo de api.js
+import * as api from "../services/api";
 import ServiceSelector from "../components/booking/ServiceSelector";
 import BarberSelector from "../components/booking/BarberSelector";
 import DateTimePicker from "../components/booking/DateTimePicker";
@@ -16,45 +16,42 @@ const HomePage = () => {
 	const [selectedBarber, setSelectedBarber] = useState(null);
 	const [selectedDateTime, setSelectedDateTime] = useState(null);
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState(null);
 
 	useEffect(() => {
 		const loadInitialData = async () => {
+			setLoading(true);
+			setError(null);
 			try {
-				// Usa as funções corretas do objeto api
 				const servicesData = await api.getServices();
 				const barbersData = await api.getBarbers();
 				setServices(servicesData);
 				setBarbers(barbersData);
 			} catch (error) {
 				console.error("Falha ao carregar dados iniciais:", error);
+				setError(
+					"Não foi possível carregar os dados. Verifique a sua conexão."
+				);
+			} finally {
+				setLoading(false);
 			}
 		};
 		loadInitialData();
 	}, []);
 
-	const handleSelectService = (service) => {
-		setSelectedService(service);
-		setStep(2);
-	};
-
-	const handleSelectBarber = (barber) => {
-		setSelectedBarber(barber);
-		setStep(3);
-	};
-
-	const handleSelectDateTime = (dateTime) => {
-		setSelectedDateTime(dateTime);
-		setStep(4);
-	};
-
+	// CORREÇÃO: Função handleConfirmBooking com diagnóstico detalhado
 	const handleConfirmBooking = async (appointmentData, token) => {
 		try {
-			// Usa a função correta do objeto api
-			await api.createAppointment(appointmentData, token);
-			setIsModalOpen(true); // Abre o modal de sucesso
+			const result = await api.createAppointment(appointmentData, token);
+			console.log("Agendamento criado com sucesso no frontend!", result);
+			setIsModalOpen(true);
 		} catch (error) {
-			console.error("Falha ao criar agendamento:", error);
-			alert("Ocorreu um erro ao tentar agendar. Por favor, tente novamente.");
+			// Este console.error vai mostrar o erro detalhado na consola do NAVEGADOR
+			console.error("FRONTEND: Falha detalhada ao criar agendamento:", error);
+			alert(
+				`Ocorreu um erro ao tentar agendar. Verifique a consola do navegador (F12) para mais detalhes.`
+			);
 		}
 	};
 
@@ -73,6 +70,14 @@ const HomePage = () => {
 	};
 
 	const renderStep = () => {
+		if (loading)
+			return (
+				<p className="text-center text-white">
+					A carregar dados da barbearia...
+				</p>
+			);
+		if (error) return <p className="text-center text-red-500">{error}</p>;
+
 		switch (step) {
 			case 1:
 				return (

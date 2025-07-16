@@ -1,38 +1,37 @@
-import React, { useState } from "react";
-import { mockBarbers } from "../../data/mockData"; // Importa os dados dos barbeiros
+import React from "react";
 
-const BarberSelector = ({ onSelectBarber }) => {
-	const [selectedId, setSelectedId] = useState(null);
-
-	const handleSelect = (barber) => {
-		setSelectedId(barber.id);
-		// Adiciona um pequeno atraso para o efeito visual antes de avançar
-		setTimeout(() => onSelectBarber(barber), 300);
-	};
-
+// CORREÇÃO: O componente agora apenas recebe a lista de barbeiros (props)
+// e não precisa mais de buscar dados por si só.
+const BarberSelector = ({ barbers, onSelectBarber, onBack }) => {
 	return (
-		<div>
-			<h4 className="text-xl font-semibold text-center mb-6 text-amber-500">
-				Escolha seu barbeiro
-			</h4>
-			<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
-				{Object.values(mockBarbers).map((barber) => (
+		<div className="text-center text-white">
+			<h2 className="text-2xl font-bold mb-6">Escolha o seu Barbeiro</h2>
+
+			{/* Mostra uma mensagem se a lista de barbeiros estiver vazia */}
+			{barbers.length === 0 && (
+				<p className="text-gray-400">
+					Não há barbeiros disponíveis no momento.
+				</p>
+			)}
+
+			<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+				{/* Itera sobre a lista de barbeiros recebida via props */}
+				{barbers.map((barber) => (
 					<div
 						key={barber.id}
-						onClick={() => handleSelect(barber)}
-						className={`p-2 rounded-lg bg-gray-700 hover:bg-gray-600 cursor-pointer transition-all duration-200 text-center ${
-							selectedId === barber.id
-								? "outline outline-2 outline-amber-500"
-								: ""
-						}`}>
-						<img
-							src={barber.imageUrl}
-							alt={barber.name}
-							className="w-24 h-24 rounded-full mx-auto mb-2 object-cover border-2 border-gray-600"
-						/>
-						<h5 className="font-semibold text-white">{barber.name}</h5>
+						onClick={() => onSelectBarber(barber)}
+						className="bg-gray-700 p-6 rounded-lg cursor-pointer transform hover:scale-105 transition-transform duration-300">
+						<p className="text-xl font-semibold">{barber.name}</p>
 					</div>
 				))}
+			</div>
+
+			<div className="mt-8">
+				<button
+					onClick={onBack}
+					className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded-lg transition duration-300">
+					Voltar
+				</button>
 			</div>
 		</div>
 	);

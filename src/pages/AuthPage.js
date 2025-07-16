@@ -28,7 +28,7 @@ const AuthPage = () => {
 			} else {
 				await register(formData);
 			}
-			navigate("/profile"); // Redireciona para o perfil após sucesso
+			navigate("/profile");
 		} catch (err) {
 			setError(err.message);
 		} finally {

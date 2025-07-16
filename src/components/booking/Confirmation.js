@@ -1,85 +1,124 @@
 import React, { useState } from "react";
+import moment from "moment";
+import { useAuth } from "../../context/AuthContext"; // Importar para usar os dados do cliente logado
 
-const Confirmation = ({ booking, onConfirm }) => {
-	const [name, setName] = useState("");
-	const [phone, setPhone] = useState("");
+// CORREÇÃO: Alterado de ({ booking, ... }) para ({ service, barber, dateTime, ... }) para aceitar props separadas
+const Confirmation = ({ service, barber, dateTime, onConfirm, onBack }) => {
+	const { user, token } = useAuth(); // Usar o contexto de autenticação
 
-	// Retorna nulo se algum dado essencial do agendamento estiver em falta
-	if (!booking.service || !booking.barber || !booking.date || !booking.time) {
+	// Preenche os dados se o utilizador estiver logado, senão começa vazio
+	const [customerName, setCustomerName] = useState(user ? user.name : "");
+	const [customerPhone, setCustomerPhone] = useState(""); // O telefone é pedido separadamente para garantir
+
+	// Adiciona uma verificação de segurança para evitar erros se os dados não chegarem
+	if (!service || !barber || !dateTime) {
 		return (
-			<p className="text-center text-red-400">
-				Ocorreu um erro. Por favor, tente novamente.
-			</p>
+			<div className="text-center text-white">
+				<h2 className="text-2xl font-bold mb-4 text-red-500">
+					Erro de Agendamento
+				</h2>
+				<p className="text-gray-400">
+					Faltam informações para confirmar o agendamento. Por favor, volte e
+					tente novamente.
+				</p>
+				<div className="mt-8">
+					<button
+						onClick={onBack}
+						className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded-lg transition duration-300">
+						Voltar
+					</button>
+				</div>
+			</div>
 		);
 	}
 
-	// Formata a data para uma melhor apresentação
-	const dateOptions = {
-		weekday: "long",
-		year: "numeric",
-		month: "long",
-		day: "numeric",
-	};
-	const formattedDate = new Date(booking.date).toLocaleDateString(
-		"pt-PT",
-		dateOptions
-	);
-
-	const handleSubmit = () => {
-		if (name && phone) {
-			onConfirm({ name, phone });
-		} else {
+	const handleConfirm = () => {
+		// Validação básica para convidados
+		if (!user && (!customerName || !customerPhone)) {
 			alert("Por favor, preencha o seu nome e telefone.");
+			return;
 		}
+
+		const appointmentData = {
+			service_id: service.id,
+			barber_id: barber.id,
+			appointment_time: new Date(dateTime).toISOString(),
+			// Só envia nome e telefone se o utilizador não estiver logado
+			...(!user && {
+				customer_name: customerName,
+				customer_phone: customerPhone,
+			}),
+		};
+		// Passa os dados e o token (se existir) para a HomePage
+		onConfirm(appointmentData, token);
 	};
 
 	return (
-		<div>
-			<h4 className="text-xl font-semibold text-center mb-6 text-amber-500">
-				Confirme os seus dados
-			</h4>
-			<div className="max-w-md mx-auto bg-gray-700 p-6 rounded-lg">
-				<div className="mb-6 space-y-2 text-gray-300">
-					<p>
-						<strong className="text-amber-500">Serviço:</strong>{" "}
-						{booking.service.name}
+		<div className="text-center text-white">
+			<h2 className="text-2xl font-bold mb-4">Confirme o seu Agendamento</h2>
+			<div className="bg-gray-700 p-6 rounded-lg max-w-lg mx-auto text-left space-y-3">
+				<p>
+					<span className="font-semibold text-gray-400">Serviço:</span>{" "}
+					{service.name}
+				</p>
+				<p>
+					<span className="font-semibold text-gray-400">Barbeiro:</span>{" "}
+					{barber.name}
+				</p>
+				<p>
+					<span className="font-semibold text-gray-400">Data:</span>{" "}
+					{moment(dateTime).format("dddd, D [de] MMMM [de] YYYY")}
+				</p>
+				<p>
+					<span className="font-semibold text-gray-400">Hora:</span>{" "}
+					{moment(dateTime).format("HH:mm")}
+				</p>
+				<p>
+					<span className="font-semibold text-gray-400">Preço:</span> €
+					{service.price}
+				</p>
+			</div>
+
+			{/* Formulário de dados do cliente só aparece se não estiver logado */}
+			{!user && (
+				<div className="text-left max-w-lg mx-auto mt-6">
+					<p className="text-lg font-semibold mb-4 text-center">
+						Os seus dados para o agendamento
 					</p>
-					<p>
-						<strong className="text-amber-500">Barbeiro:</strong>{" "}
-						{booking.barber.name}
-					</p>
-					<p>
-						<strong className="text-amber-500">Data:</strong> {formattedDate}
-					</p>
-					<p>
-						<strong className="text-amber-500">Horário:</strong> {booking.time}
-					</p>
-					<p className="text-lg font-bold">
-						<strong className="text-amber-500">Total:</strong> R${" "}
-						{booking.service.price.toFixed(2)}
-					</p>
+					<div className="mb-4">
+						<label className="block text-gray-400 mb-2">Nome Completo</label>
+						<input
+							type="text"
+							value={customerName}
+							onChange={(e) => setCustomerName(e.target.value)}
+							className="w-full px-3 py-2 bg-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+							placeholder="O seu nome"
+						/>
+					</div>
+					<div className="mb-4">
+						<label className="block text-gray-400 mb-2">Telefone</label>
+						<input
+							type="tel"
+							value={customerPhone}
+							onChange={(e) => setCustomerPhone(e.target.value)}
+							className="w-full px-3 py-2 bg-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+							placeholder="O seu número de telefone"
+						/>
+					</div>
 				</div>
-				<div className="space-y-4">
-					<input
-						type="text"
-						value={name}
-						onChange={(e) => setName(e.target.value)}
-						placeholder="O seu Nome Completo"
-						className="w-full bg-gray-800 border-gray-600 rounded-lg p-3 focus:ring-amber-500 focus:border-amber-500"
-					/>
-					<input
-						type="tel"
-						value={phone}
-						onChange={(e) => setPhone(e.target.value)}
-						placeholder="O seu Telefone (WhatsApp)"
-						className="w-full bg-gray-800 border-gray-600 rounded-lg p-3 focus:ring-amber-500 focus:border-amber-500"
-					/>
-					<button
-						onClick={handleSubmit}
-						className="w-full bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-3 px-4 rounded-lg transition-colors">
-						Confirmar Agendamento
-					</button>
-				</div>
+			)}
+
+			<div className="mt-8 flex justify-center gap-4">
+				<button
+					onClick={onBack}
+					className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-8 rounded-lg transition duration-300">
+					Voltar
+				</button>
+				<button
+					onClick={handleConfirm}
+					className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition duration-300">
+					Confirmar Agendamento
+				</button>
 			</div>
 		</div>
 	);

@@ -1,34 +1,28 @@
-import React, { useState } from "react";
-import { mockServices } from "../../data/mockData"; // Importa os dados
+import React from "react";
 
-const ServiceSelector = ({ onSelectService }) => {
-	const [selectedId, setSelectedId] = useState(null);
-
-	const handleSelect = (service) => {
-		setSelectedId(service.id);
-		// Adiciona um pequeno atraso para o efeito visual antes de avançar
-		setTimeout(() => onSelectService(service), 300);
-	};
-
+// CORREÇÃO: O componente agora apenas recebe a lista de serviços (props)
+// e não precisa mais de buscar dados ou usar mockData.
+const ServiceSelector = ({ services, onSelectService }) => {
 	return (
-		<div>
-			<h4 className="text-xl font-semibold text-center mb-6 text-amber-500">
-				Escolha o serviço desejado
-			</h4>
-			<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
-				{Object.values(mockServices).map((service) => (
+		<div className="text-center text-white">
+			<h2 className="text-2xl font-bold mb-6">Escolha o Serviço</h2>
+
+			{/* Mostra uma mensagem se a lista de serviços estiver vazia */}
+			{services.length === 0 && (
+				<p className="text-gray-400">Não há serviços disponíveis no momento.</p>
+			)}
+
+			<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+				{/* Itera sobre a lista de serviços recebida via props */}
+				{services.map((service) => (
 					<div
 						key={service.id}
-						onClick={() => handleSelect(service)}
-						className={`p-4 rounded-lg bg-gray-700 hover:bg-gray-600 cursor-pointer transition-all duration-200 flex flex-col justify-between ${
-							selectedId === service.id
-								? "outline outline-2 outline-amber-500"
-								: ""
-						}`}>
-						<h5 className="font-bold text-white">{service.name}</h5>
-						<div className="text-sm text-gray-400 mt-2">
-							<p>R$ {service.price.toFixed(2)}</p>
-							<p>{service.duration} min</p>
+						onClick={() => onSelectService(service)}
+						className="bg-gray-700 p-6 rounded-lg cursor-pointer transform hover:scale-105 transition-transform duration-300 flex flex-col justify-between">
+						<h3 className="text-xl font-semibold mb-2">{service.name}</h3>
+						<div className="text-left text-gray-300">
+							<p>Duração: {service.duration} min</p>
+							<p>Preço: R${service.price}</p>
 						</div>
 					</div>
 				))}

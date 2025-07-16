@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { getMyAppointments } from "../services/api";
-import StatusBadge from "../components/ui/StatusBadge"; // Corrigido
-import { formatDateTime } from "../utils/formatters"; // Corrigido
+import StatusBadge from "../components/ui/StatusBadge";
+import { formatDateTime } from "../utils/formatters";
 
 const ProfilePage = () => {
 	const { user, token } = useAuth();
