@@ -1,256 +1,243 @@
 // Importação dos módulos necessários
 const express = require("express");
 const cors = require("cors");
-const db = require("./db"); // O nosso ficheiro de ligação à base de dados
+const pool = require("./db"); // Módulo de conexão com a base de dados
 
-// Inicialização da aplicação Express
 const app = express();
-const port = process.env.PORT || 3004; // Define a porta do servidor
+const PORT = process.env.PORT || 5000;
 
-// Configuração dos Middlewares
-// CORS para permitir pedidos de outras origens (o nosso frontend React)
-const corsOptions = {
-	origin: "*", // Em produção, deve restringir ao seu domínio
-	optionsSuccessStatus: 200,
-};
-app.use(cors(corsOptions));
-app.use(express.json()); // Permite ao servidor interpretar corpos de pedido em formato JSON
+// Middlewares
+app.use(cors()); // Permite requisições de diferentes origens
+app.use(express.json()); // Permite ao servidor entender JSON
 
-// --- ROTAS PÚBLICAS (PARA O SITE DO CLIENTE) ---
+// --- ROTAS PÚBLICAS (Para os Clientes) ---
 
-// GET /api/services - Retorna apenas os serviços que estão ativos
+// Rota para obter todos os serviços ATIVOS
 app.get("/api/services", async (req, res) => {
 	try {
-		const { rows } = await db.query(
-			"SELECT * FROM services WHERE is_active = true ORDER BY price"
+		const services = await pool.query(
+			"SELECT * FROM services WHERE is_active = true ORDER BY name ASC"
 		);
-		res.json(rows);
+		res.json(services.rows);
 	} catch (err) {
 		console.error(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send("Erro no Servidor");
 	}
 });
 
-// GET /api/barbers - Retorna apenas os barbeiros que estão ativos
+// Rota para obter todos os barbeiros ATIVOS
 app.get("/api/barbers", async (req, res) => {
 	try {
-		const { rows } = await db.query(
-			"SELECT * FROM barbers WHERE is_active = true ORDER BY name"
+		const barbers = await pool.query(
+			"SELECT * FROM barbers WHERE is_active = true ORDER BY name ASC"
 		);
-		res.json(rows);
+		res.json(barbers.rows);
 	} catch (err) {
 		console.error(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send("Erro no Servidor");
 	}
 });
 
-// GET /api/appointments/:barberId/:date - Verifica horários disponíveis (apenas os confirmados)
+// Rota para verificar horários disponíveis (considera apenas agendamentos 'confirmed')
 app.get("/api/appointments/:barberId/:date", async (req, res) => {
 	try {
 		const { barberId, date } = req.params;
-		const query = `
-		    SELECT appointment_time, s.duration 
-		    FROM appointments a
-			JOIN services s ON a.service_id = s.id
-			WHERE a.barber_id = $1 AND a.appointment_time::date = $2 AND a.status = 'confirmed'
-			`;
-		const { rows } = await db.query(query, [barberId, date]);
-		res.json(rows);
+		const appointments = await pool.query(
+			"SELECT TO_CHAR(appointment_time, 'HH24:MI') as time FROM appointments WHERE barber_id = $1 AND appointment_time::date = $2 AND status = 'confirmed'",
+			[barberId, date]
+		);
+		res.json(appointments.rows.map((a) => a.time));
 	} catch (err) {
 		console.error(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send("Erro no Servidor");
 	}
 });
 
-// POST /api/appointments - Cria um novo agendamento (com status 'pending' por defeito)
+// Rota para criar um novo agendamento (cria com status 'pending')
 app.post("/api/appointments", async (req, res) => {
 	try {
 		const {
-			serviceId,
-			barberId,
-			appointmentTime,
-			customerName,
-			customerPhone,
+			service_id,
+			barber_id,
+			customer_name,
+			customer_phone,
+			appointment_time,
 		} = req.body;
-		const query = `
-			INSERT INTO appointments (service_id, barber_id, appointment_time, customer_name, customer_phone)
-			VALUES ($1, $2, $3, $4, $5)
-			RETURNING id
-			`;
-		const values = [
-			serviceId,
-			barberId,
-			appointmentTime,
-			customerName,
-			customerPhone,
-		];
-		const { rows } = await db.query(query, values);
-		res.status(201).json({ id: rows[0].id });
+		const newAppointment = await pool.query(
+			"INSERT INTO appointments (service_id, barber_id, customer_name, customer_phone, appointment_time, status) VALUES ($1, $2, $3, $4, $5, 'pending') RETURNING *",
+			[service_id, barber_id, customer_name, customer_phone, appointment_time]
+		);
+		res.json(newAppointment.rows[0]);
 	} catch (err) {
 		console.error(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send("Erro no Servidor");
 	}
 });
 
-// --- ROTAS DE ADMINISTRAÇÃO (PARA O PAINEL DE GESTÃO) ---
+// --- ROTAS DE ADMINISTRAÇÃO (Para o Painel do Dono) ---
+
+// --- Gestão de Agendamentos ---
+
+// Obter TODOS os agendamentos com detalhes (JOIN)
+app.get("/api/admin/appointments", async (req, res) => {
+	try {
+		const query = `
+            SELECT 
+                a.id,
+                a.customer_name,
+                a.customer_phone,
+                a.appointment_time,
+                a.status,
+                s.name as service_name,
+                b.name as barber_name
+            FROM appointments a
+            JOIN services s ON a.service_id = s.id
+            JOIN barbers b ON a.barber_id = b.id
+            ORDER BY a.appointment_time DESC
+        `;
+		const appointments = await pool.query(query);
+		res.json(appointments.rows);
+	} catch (err) {
+		console.error(err.message);
+		res.status(500).send("Erro no Servidor");
+	}
+});
+
+// Confirmar um agendamento
+app.post("/api/admin/appointments/:id/confirm", async (req, res) => {
+	try {
+		const { id } = req.params;
+		const updatedAppointment = await pool.query(
+			"UPDATE appointments SET status = 'confirmed' WHERE id = $1 RETURNING *",
+			[id]
+		);
+		res.json(updatedAppointment.rows[0]);
+	} catch (err) {
+		console.error(err.message);
+		res.status(500).send("Erro no Servidor");
+	}
+});
+
+// Recusar um agendamento
+app.post("/api/admin/appointments/:id/deny", async (req, res) => {
+	try {
+		const { id } = req.params;
+		const updatedAppointment = await pool.query(
+			"UPDATE appointments SET status = 'denied' WHERE id = $1 RETURNING *",
+			[id]
+		);
+		res.json(updatedAppointment.rows[0]);
+	} catch (err) {
+		console.error(err.message);
+		res.status(500).send("Erro no Servidor");
+	}
+});
 
 // --- Gestão de Serviços ---
 app.get("/api/admin/services", async (req, res) => {
 	try {
-		const { rows } = await db.query("SELECT * FROM services ORDER BY name");
-		res.json(rows);
+		const services = await pool.query("SELECT * FROM services ORDER BY id ASC");
+		res.json(services.rows);
 	} catch (err) {
 		console.error(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send("Erro no Servidor");
 	}
 });
-
 app.post("/api/admin/services", async (req, res) => {
 	try {
-		const { id, name, price, duration } = req.body;
-		const { rows } = await db.query(
-			"INSERT INTO services (id, name, price, duration) VALUES ($1, $2, $3, $4) RETURNING *",
-			[id, name, price, duration]
+		const { name, price, duration } = req.body;
+		const newService = await pool.query(
+			"INSERT INTO services (name, price, duration) VALUES ($1, $2, $3) RETURNING *",
+			[name, price, duration]
 		);
-		res.status(201).json(rows[0]);
+		res.json(newService.rows[0]);
 	} catch (err) {
 		console.error(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send("Erro no Servidor");
 	}
 });
-
 app.put("/api/admin/services/:id", async (req, res) => {
 	try {
-		const { name, price, duration, is_active } = req.body;
-		const { rows } = await db.query(
-			"UPDATE services SET name = $1, price = $2, duration = $3, is_active = $4 WHERE id = $5 RETURNING *",
-			[name, price, duration, is_active, req.params.id]
+		const { id } = req.params;
+		const { name, price, duration } = req.body;
+		const updatedService = await pool.query(
+			"UPDATE services SET name = $1, price = $2, duration = $3 WHERE id = $4 RETURNING *",
+			[name, price, duration, id]
 		);
-		res.json(rows[0]);
+		res.json(updatedService.rows[0]);
 	} catch (err) {
 		console.error(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send("Erro no Servidor");
 	}
 });
-
-app.delete("/api/admin/services/:id", async (req, res) => {
+app.patch("/api/admin/services/:id/status", async (req, res) => {
 	try {
-		await db.query("DELETE FROM services WHERE id = $1", [req.params.id]);
-		res.status(204).send();
+		const { id } = req.params;
+		const { is_active } = req.body;
+		const updatedService = await pool.query(
+			"UPDATE services SET is_active = $1 WHERE id = $2 RETURNING *",
+			[is_active, id]
+		);
+		res.json(updatedService.rows[0]);
 	} catch (err) {
 		console.error(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send("Erro no Servidor");
 	}
 });
 
 // --- Gestão de Barbeiros ---
 app.get("/api/admin/barbers", async (req, res) => {
 	try {
-		const { rows } = await db.query("SELECT * FROM barbers ORDER BY name");
-		res.json(rows);
+		const barbers = await pool.query("SELECT * FROM barbers ORDER BY id ASC");
+		res.json(barbers.rows);
 	} catch (err) {
 		console.error(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send("Erro no Servidor");
 	}
 });
-
 app.post("/api/admin/barbers", async (req, res) => {
 	try {
-		const { id, name, image_url } = req.body;
-		const { rows } = await db.query(
-			"INSERT INTO barbers (id, name, image_url) VALUES ($1, $2, $3) RETURNING *",
-			[id, name, image_url]
+		const { name } = req.body;
+		const newBarber = await pool.query(
+			"INSERT INTO barbers (name) VALUES ($1) RETURNING *",
+			[name]
 		);
-		res.status(201).json(rows[0]);
+		res.json(newBarber.rows[0]);
 	} catch (err) {
 		console.error(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send("Erro no Servidor");
 	}
 });
-
 app.put("/api/admin/barbers/:id", async (req, res) => {
 	try {
-		const { name, image_url, is_active } = req.body;
-		const { rows } = await db.query(
-			"UPDATE barbers SET name = $1, image_url = $2, is_active = $3 WHERE id = $4 RETURNING *",
-			[name, image_url, is_active, req.params.id]
+		const { id } = req.params;
+		const { name } = req.body;
+		const updatedBarber = await pool.query(
+			"UPDATE barbers SET name = $1 WHERE id = $2 RETURNING *",
+			[name, id]
 		);
-		res.json(rows[0]);
+		res.json(updatedBarber.rows[0]);
 	} catch (err) {
 		console.error(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send("Erro no Servidor");
 	}
 });
-
-app.delete("/api/admin/barbers/:id", async (req, res) => {
-	try {
-		await db.query("DELETE FROM barbers WHERE id = $1", [req.params.id]);
-		res.status(204).send();
-	} catch (err) {
-		console.error(err.message);
-		res.status(500).send("Server error");
-	}
-});
-
-// --- Gestão de Agendamentos ---
-app.get("/api/admin/appointments", async (req, res) => {
-	try {
-		const query = `
-            SELECT 
-                a.id, a.appointment_time, a.status, a.customer_name,
-                s.name as service_name, b.name as barber_name
-            FROM appointments a
-            JOIN services s ON a.service_id = s.id
-            JOIN barbers b ON a.barber_id = b.id
-            ORDER BY a.appointment_time DESC
-        `;
-		const { rows } = await db.query(query);
-		res.json(rows);
-	} catch (err) {
-		console.error(err.message);
-		res.status(500).send("Server error");
-	}
-});
-
-app.post("/api/admin/appointments/:id/confirm", async (req, res) => {
+app.patch("/api/admin/barbers/:id/status", async (req, res) => {
 	try {
 		const { id } = req.params;
-		const { rows } = await db.query(
-			"UPDATE appointments SET status = 'confirmed' WHERE id = $1 RETURNING *",
-			[id]
+		const { is_active } = req.body;
+		const updatedBarber = await pool.query(
+			"UPDATE barbers SET is_active = $1 WHERE id = $2 RETURNING *",
+			[is_active, id]
 		);
-		res.json(rows[0]);
+		res.json(updatedBarber.rows[0]);
 	} catch (err) {
 		console.error(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send("Erro no Servidor");
 	}
 });
 
-app.post("/api/admin/appointments/:id/deny", async (req, res) => {
-	try {
-		const { id } = req.params;
-		const { rows } = await db.query(
-			"UPDATE appointments SET status = 'denied' WHERE id = $1 RETURNING *",
-			[id]
-		);
-		res.json(rows[0]);
-	} catch (err) {
-		console.error(err.message);
-		res.status(500).send("Server error");
-	}
-});
-
-// Inicia o servidor e testa a ligação à base de dados
-app.listen(port, async () => {
-	console.log(`Backend server is running on port ${port}`);
-	try {
-		const client = await db.pool.connect();
-		console.log("Ligação ao PostgreSQL estabelecida com sucesso!");
-		client.release();
-	} catch (err) {
-		console.error(
-			"Erro: Não foi possível ligar à base de dados PostgreSQL.",
-			err.stack
-		);
-	}
+// Inicia o servidor
+app.listen(PORT, () => {
+	console.log(`Servidor a correr na porta ${PORT}`);
 });
