@@ -1,38 +1,7 @@
 import React, { useState, useEffect } from "react";
 import * as adminApi from "../services/adminApi";
-
-// Função para formatar a data e hora
-const formatDateTime = (isoString) => {
-	const date = new Date(isoString);
-	return `${date.toLocaleDateString("pt-PT")} às ${date.toLocaleTimeString(
-		"pt-PT",
-		{ hour: "2-digit", minute: "2-digit" }
-	)}`;
-};
-
-// Componente para o status do agendamento
-const StatusBadge = ({ status }) => {
-	const statusStyles = {
-		pending: "bg-yellow-500 text-white",
-		confirmed: "bg-green-500 text-white",
-		denied: "bg-red-500 text-white",
-		completed: "bg-blue-500 text-white",
-	};
-	const statusText = {
-		pending: "Pendente",
-		confirmed: "Confirmado",
-		denied: "Recusado",
-		completed: "Concluído",
-	};
-	return (
-		<span
-			className={`px-2 py-1 rounded-full text-xs font-semibold ${
-				statusStyles[status] || "bg-gray-500"
-			}`}>
-			{statusText[status] || status}
-		</span>
-	);
-};
+import { formatDateTime } from "../utils/formatters"; // Corrigido
+import StatusBadge from "../components/ui/StatusBadge"; // Corrigido
 
 const AdminPage = () => {
 	// Estados para guardar os dados da API
@@ -95,6 +64,7 @@ const AdminPage = () => {
 
 	const handlePasswordSubmit = (e) => {
 		e.preventDefault();
+		// A senha pode ser guardada numa variável de ambiente no futuro
 		if (password === "admin") {
 			setIsAuthenticated(true);
 		} else {
@@ -131,8 +101,8 @@ const AdminPage = () => {
 		e.preventDefault();
 		try {
 			await adminApi.addService(newService);
-			setNewService({ name: "", price: "", duration: "" });
-			fetchData();
+			setNewService({ name: "", price: "", duration: "" }); // Limpa o formulário
+			fetchData(); // Recarrega os dados
 		} catch (err) {
 			setError("Falha ao adicionar serviço.");
 		}
@@ -160,7 +130,7 @@ const AdminPage = () => {
 				price: editingService.price,
 				duration: editingService.duration,
 			});
-			setEditingService(null);
+			setEditingService(null); // Fecha o modo de edição
 			fetchData();
 		} catch (err) {
 			setError("Falha ao atualizar serviço.");
@@ -210,6 +180,8 @@ const AdminPage = () => {
 	};
 
 	// --- Renderização ---
+
+	// Ecrã de Login se não estiver autenticado
 	if (!isAuthenticated) {
 		return (
 			<div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">
@@ -351,6 +323,8 @@ const AdminPage = () => {
 			{/* Secção de Gestão de Serviços */}
 			<div className="mb-8 bg-gray-800 p-6 rounded-lg shadow-lg">
 				<h2 className="text-2xl font-semibold mb-4">Gerir Serviços</h2>
+
+				{/* Formulário para adicionar/editar serviço */}
 				<form
 					onSubmit={editingService ? handleUpdateService : handleAddService}
 					className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
@@ -405,6 +379,8 @@ const AdminPage = () => {
 						)}
 					</div>
 				</form>
+
+				{/* Tabela de Serviços */}
 				<div className="overflow-x-auto">
 					<table className="min-w-full bg-gray-700 rounded-md">
 						<thead>
@@ -464,6 +440,8 @@ const AdminPage = () => {
 			{/* Secção de Gestão de Barbeiros */}
 			<div className="bg-gray-800 p-6 rounded-lg shadow-lg">
 				<h2 className="text-2xl font-semibold mb-4">Gerir Barbeiros</h2>
+
+				{/* Formulário para adicionar/editar barbeiro */}
 				<form
 					onSubmit={editingBarber ? handleUpdateBarber : handleAddBarber}
 					className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -494,6 +472,8 @@ const AdminPage = () => {
 						)}
 					</div>
 				</form>
+
+				{/* Tabela de Barbeiros */}
 				<div className="overflow-x-auto">
 					<table className="min-w-full bg-gray-700 rounded-md">
 						<thead>

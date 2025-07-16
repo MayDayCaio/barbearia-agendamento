@@ -1,5 +1,5 @@
 // A URL base para as rotas de administração da nossa API
-const API_URL = "http://localhost:5000/api/admin";
+const API_URL = "http://31.97.171.200:5000/api/admin";
 
 // --- Funções da API para Agendamentos ---
 

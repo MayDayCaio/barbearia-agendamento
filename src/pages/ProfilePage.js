@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { getMyAppointments } from "../services/api"; // Precisamos de adicionar esta função
-import { StatusBadge, formatDateTime } from "./AdminPage"; // Reutilizar componentes
+import { getMyAppointments } from "../services/api";
+import StatusBadge from "../components/ui/StatusBadge"; // Corrigido
+import { formatDateTime } from "../utils/formatters"; // Corrigido
 
 const ProfilePage = () => {
 	const { user, token } = useAuth();
