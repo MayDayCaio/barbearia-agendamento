@@ -40,17 +40,33 @@ const HomePage = () => {
 		loadInitialData();
 	}, []);
 
-	// CORREÇÃO: Função handleConfirmBooking com diagnóstico detalhado
+	const handleSelectService = (service) => {
+		setSelectedService(service);
+		setStep(2);
+	};
+
+	const handleSelectBarber = (barber) => {
+		setSelectedBarber(barber);
+		setStep(3);
+	};
+
+	const handleSelectDateTime = (dateTime) => {
+		setSelectedDateTime(dateTime);
+		setStep(4);
+	};
+
 	const handleConfirmBooking = async (appointmentData, token) => {
 		try {
 			const result = await api.createAppointment(appointmentData, token);
-			console.log("Agendamento criado com sucesso no frontend!", result);
+			console.log("HOMEPAGE: Sucesso! Agendamento criado:", result);
 			setIsModalOpen(true);
 		} catch (error) {
-			// Este console.error vai mostrar o erro detalhado na consola do NAVEGADOR
-			console.error("FRONTEND: Falha detalhada ao criar agendamento:", error);
+			console.error(
+				"HOMEPAGE: Ocorreu um erro no fluxo de agendamento.",
+				error
+			);
 			alert(
-				`Ocorreu um erro ao tentar agendar. Verifique a consola do navegador (F12) para mais detalhes.`
+				`Ocorreu um erro ao tentar agendar. Verifique a consola do navegador (F12) para a causa específica.`
 			);
 		}
 	};

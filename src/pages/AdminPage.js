@@ -1,34 +1,26 @@
 import React, { useState, useEffect } from "react";
 import * as adminApi from "../services/adminApi";
-import { formatDateTime } from "../utils/formatters"; // Corrigido
-import StatusBadge from "../components/ui/StatusBadge"; // Corrigido
+import { formatDateTime } from "../utils/formatters";
+import StatusBadge from "../components/ui/StatusBadge";
 
 const AdminPage = () => {
-	// Estados para guardar os dados da API
 	const [services, setServices] = useState([]);
 	const [barbers, setBarbers] = useState([]);
 	const [appointments, setAppointments] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
-
-	// Estados para os formulários de adição
 	const [newService, setNewService] = useState({
 		name: "",
 		price: "",
 		duration: "",
 	});
 	const [newBarber, setNewBarber] = useState({ name: "" });
-
-	// Estado para o item a ser editado
 	const [editingService, setEditingService] = useState(null);
 	const [editingBarber, setEditingBarber] = useState(null);
-
-	// Estado para a proteção por senha
 	const [isAuthenticated, setIsAuthenticated] = useState(false);
 	const [password, setPassword] = useState("");
 	const [authError, setAuthError] = useState("");
 
-	// Função para carregar todos os dados da API
 	const fetchData = async () => {
 		try {
 			setLoading(true);
@@ -49,65 +41,67 @@ const AdminPage = () => {
 		}
 	};
 
-	// useEffect para carregar os dados quando o componente for montado
 	useEffect(() => {
 		if (isAuthenticated) {
 			fetchData();
 		}
 	}, [isAuthenticated]);
 
-	// --- Handlers para Autenticação ---
 	const handlePasswordChange = (e) => {
 		setPassword(e.target.value);
 		setAuthError("");
 	};
-
 	const handlePasswordSubmit = (e) => {
 		e.preventDefault();
-		// A senha pode ser guardada numa variável de ambiente no futuro
 		if (password === "admin") {
 			setIsAuthenticated(true);
 		} else {
 			setAuthError("Senha incorreta.");
 		}
 	};
-
-	// --- Handlers para Agendamentos ---
 	const handleConfirmAppointment = async (id) => {
 		try {
 			await adminApi.confirmAppointment(id);
-			fetchData(); // Recarrega os dados para refletir a mudança
+			fetchData();
 		} catch (err) {
 			setError("Falha ao confirmar o agendamento.");
 		}
 	};
-
 	const handleDenyAppointment = async (id) => {
 		try {
 			await adminApi.denyAppointment(id);
-			fetchData(); // Recarrega os dados
+			fetchData();
 		} catch (err) {
 			setError("Falha ao recusar o agendamento.");
 		}
 	};
-
-	// --- Handlers para Serviços ---
+	const handleCancelByAdmin = async (appointmentId) => {
+		if (
+			window.confirm("Tem a certeza de que deseja cancelar este agendamento?")
+		) {
+			try {
+				await adminApi.cancelAppointmentByAdmin(appointmentId);
+				fetchData();
+			} catch (err) {
+				alert("Ocorreu um erro ao tentar cancelar o agendamento.");
+				console.error(err);
+			}
+		}
+	};
 	const handleNewServiceChange = (e) => {
 		const { name, value } = e.target;
 		setNewService((prevState) => ({ ...prevState, [name]: value }));
 	};
-
 	const handleAddService = async (e) => {
 		e.preventDefault();
 		try {
 			await adminApi.addService(newService);
-			setNewService({ name: "", price: "", duration: "" }); // Limpa o formulário
-			fetchData(); // Recarrega os dados
+			setNewService({ name: "", price: "", duration: "" });
+			fetchData();
 		} catch (err) {
 			setError("Falha ao adicionar serviço.");
 		}
 	};
-
 	const handleToggleServiceStatus = async (id, currentStatus) => {
 		try {
 			await adminApi.toggleServiceStatus(id, !currentStatus);
@@ -116,12 +110,10 @@ const AdminPage = () => {
 			setError("Falha ao alterar status do serviço.");
 		}
 	};
-
 	const handleEditServiceChange = (e) => {
 		const { name, value } = e.target;
 		setEditingService((prevState) => ({ ...prevState, [name]: value }));
 	};
-
 	const handleUpdateService = async (e) => {
 		e.preventDefault();
 		try {
@@ -130,18 +122,15 @@ const AdminPage = () => {
 				price: editingService.price,
 				duration: editingService.duration,
 			});
-			setEditingService(null); // Fecha o modo de edição
+			setEditingService(null);
 			fetchData();
 		} catch (err) {
 			setError("Falha ao atualizar serviço.");
 		}
 	};
-
-	// --- Handlers para Barbeiros ---
 	const handleNewBarberChange = (e) => {
 		setNewBarber({ name: e.target.value });
 	};
-
 	const handleAddBarber = async (e) => {
 		e.preventDefault();
 		try {
@@ -152,7 +141,6 @@ const AdminPage = () => {
 			setError("Falha ao adicionar barbeiro.");
 		}
 	};
-
 	const handleToggleBarberStatus = async (id, currentStatus) => {
 		try {
 			await adminApi.toggleBarberStatus(id, !currentStatus);
@@ -161,11 +149,9 @@ const AdminPage = () => {
 			setError("Falha ao alterar status do barbeiro.");
 		}
 	};
-
 	const handleEditBarberChange = (e) => {
 		setEditingBarber((prevState) => ({ ...prevState, name: e.target.value }));
 	};
-
 	const handleUpdateBarber = async (e) => {
 		e.preventDefault();
 		try {
@@ -179,9 +165,6 @@ const AdminPage = () => {
 		}
 	};
 
-	// --- Renderização ---
-
-	// Ecrã de Login se não estiver autenticado
 	if (!isAuthenticated) {
 		return (
 			<div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">
@@ -226,105 +209,105 @@ const AdminPage = () => {
 			<h1 className="text-3xl font-bold mb-8 border-b border-gray-700 pb-4">
 				Painel de Administração
 			</h1>
-
 			{loading && <p>A carregar...</p>}
 			{error && (
 				<p className="text-red-500 bg-red-200 p-3 rounded-md mb-4">{error}</p>
 			)}
 
-			{/* Secção de Gestão de Agendamentos */}
 			<div className="mb-8 bg-gray-800 p-6 rounded-lg shadow-lg">
 				<h2 className="text-2xl font-semibold mb-4">Gerir Agendamentos</h2>
-
 				<h3 className="text-xl font-semibold mb-3 text-yellow-400">
 					Agendamentos Pendentes
 				</h3>
-				{pendingAppointments.length > 0 ? (
-					<div className="overflow-x-auto">
-						<table className="min-w-full bg-gray-700 rounded-md">
-							<thead>
-								<tr className="bg-gray-600">
-									<th className="p-3 text-left">Cliente</th>
-									<th className="p-3 text-left">Data & Hora</th>
-									<th className="p-3 text-left">Serviço</th>
-									<th className="p-3 text-left">Barbeiro</th>
-									<th className="p-3 text-center">Ações</th>
+				<div className="overflow-x-auto">
+					<table className="min-w-full bg-gray-700 rounded-md">
+						<thead>
+							<tr className="bg-gray-600">
+								<th className="p-3 text-left">Cliente</th>
+								<th className="p-3 text-left">Data & Hora</th>
+								<th className="p-3 text-left">Serviço</th>
+								<th className="p-3 text-left">Barbeiro</th>
+								<th className="p-3 text-center">Ações</th>
+							</tr>
+						</thead>
+						<tbody>
+							{pendingAppointments.map((app) => (
+								<tr key={app.id} className="border-t border-gray-600">
+									<td className="p-3">
+										{app.customer_name} ({app.customer_phone})
+									</td>
+									<td className="p-3">
+										{formatDateTime(app.appointment_time)}
+									</td>
+									<td className="p-3">{app.service_name}</td>
+									<td className="p-3">{app.barber_name}</td>
+									<td className="p-3 flex justify-center gap-2">
+										<button
+											onClick={() => handleConfirmAppointment(app.id)}
+											className="bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded-md">
+											Aceitar
+										</button>
+										<button
+											onClick={() => handleDenyAppointment(app.id)}
+											className="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-md">
+											Recusar
+										</button>
+										<button
+											onClick={() => handleCancelByAdmin(app.id)}
+											className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-1 px-3 rounded-md">
+											Cancelar
+										</button>
+									</td>
 								</tr>
-							</thead>
-							<tbody>
-								{pendingAppointments.map((app) => (
-									<tr key={app.id} className="border-t border-gray-600">
-										<td className="p-3">
-											{app.customer_name} ({app.customer_phone})
-										</td>
-										<td className="p-3">
-											{formatDateTime(app.appointment_time)}
-										</td>
-										<td className="p-3">{app.service_name}</td>
-										<td className="p-3">{app.barber_name}</td>
-										<td className="p-3 flex justify-center gap-2">
-											<button
-												onClick={() => handleConfirmAppointment(app.id)}
-												className="bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded-md">
-												Aceitar
-											</button>
-											<button
-												onClick={() => handleDenyAppointment(app.id)}
-												className="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-md">
-												Recusar
-											</button>
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
-				) : (
-					<p className="text-gray-400">Não há agendamentos pendentes.</p>
-				)}
-
+							))}
+						</tbody>
+					</table>
+				</div>
 				<h3 className="text-xl font-semibold mt-6 mb-3 text-gray-300">
 					Histórico de Agendamentos
 				</h3>
-				{otherAppointments.length > 0 ? (
-					<div className="overflow-x-auto">
-						<table className="min-w-full bg-gray-700 rounded-md">
-							<thead>
-								<tr className="bg-gray-600">
-									<th className="p-3 text-left">Cliente</th>
-									<th className="p-3 text-left">Data & Hora</th>
-									<th className="p-3 text-left">Serviço</th>
-									<th className="p-3 text-left">Barbeiro</th>
-									<th className="p-3 text-center">Status</th>
+				<div className="overflow-x-auto">
+					<table className="min-w-full bg-gray-700 rounded-md">
+						<thead>
+							<tr className="bg-gray-600">
+								<th className="p-3 text-left">Cliente</th>
+								<th className="p-3 text-left">Data & Hora</th>
+								<th className="p-3 text-left">Serviço</th>
+								<th className="p-3 text-left">Barbeiro</th>
+								<th className="p-3 text-center">Status</th>
+								<th className="p-3 text-center">Ações</th>
+							</tr>
+						</thead>
+						<tbody>
+							{otherAppointments.map((app) => (
+								<tr key={app.id} className="border-t border-gray-600">
+									<td className="p-3">{app.customer_name}</td>
+									<td className="p-3">
+										{formatDateTime(app.appointment_time)}
+									</td>
+									<td className="p-3">{app.service_name}</td>
+									<td className="p-3">{app.barber_name}</td>
+									<td className="p-3 text-center">
+										<StatusBadge status={app.status} />
+									</td>
+									<td className="p-3 text-center">
+										{app.status === "confirmed" && (
+											<button
+												onClick={() => handleCancelByAdmin(app.id)}
+												className="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-md text-xs">
+												Cancelar
+											</button>
+										)}
+									</td>
 								</tr>
-							</thead>
-							<tbody>
-								{otherAppointments.map((app) => (
-									<tr key={app.id} className="border-t border-gray-600">
-										<td className="p-3">{app.customer_name}</td>
-										<td className="p-3">
-											{formatDateTime(app.appointment_time)}
-										</td>
-										<td className="p-3">{app.service_name}</td>
-										<td className="p-3">{app.barber_name}</td>
-										<td className="p-3 text-center">
-											<StatusBadge status={app.status} />
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
-				) : (
-					<p className="text-gray-400">Não há outros agendamentos.</p>
-				)}
+							))}
+						</tbody>
+					</table>
+				</div>
 			</div>
 
-			{/* Secção de Gestão de Serviços */}
 			<div className="mb-8 bg-gray-800 p-6 rounded-lg shadow-lg">
 				<h2 className="text-2xl font-semibold mb-4">Gerir Serviços</h2>
-
-				{/* Formulário para adicionar/editar serviço */}
 				<form
 					onSubmit={editingService ? handleUpdateService : handleAddService}
 					className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
@@ -379,8 +362,6 @@ const AdminPage = () => {
 						)}
 					</div>
 				</form>
-
-				{/* Tabela de Serviços */}
 				<div className="overflow-x-auto">
 					<table className="min-w-full bg-gray-700 rounded-md">
 						<thead>
@@ -437,11 +418,8 @@ const AdminPage = () => {
 				</div>
 			</div>
 
-			{/* Secção de Gestão de Barbeiros */}
 			<div className="bg-gray-800 p-6 rounded-lg shadow-lg">
 				<h2 className="text-2xl font-semibold mb-4">Gerir Barbeiros</h2>
-
-				{/* Formulário para adicionar/editar barbeiro */}
 				<form
 					onSubmit={editingBarber ? handleUpdateBarber : handleAddBarber}
 					className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -472,8 +450,6 @@ const AdminPage = () => {
 						)}
 					</div>
 				</form>
-
-				{/* Tabela de Barbeiros */}
 				<div className="overflow-x-auto">
 					<table className="min-w-full bg-gray-700 rounded-md">
 						<thead>

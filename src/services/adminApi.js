@@ -1,3 +1,4 @@
+// A URL base para as rotas de administração da nossa API
 const API_URL = "http://31.97.171.200:5000/api/admin";
 
 export const getAppointments = async () => {
@@ -19,6 +20,19 @@ export const denyAppointment = async (id) => {
 		method: "POST",
 	});
 	if (!response.ok) throw new Error("Falha ao recusar agendamento");
+	return response.json();
+};
+
+export const cancelAppointmentByAdmin = async (appointmentId) => {
+	const response = await fetch(
+		`${API_URL}/appointments/${appointmentId}/cancel`,
+		{
+			method: "POST",
+		}
+	);
+	if (!response.ok) {
+		throw new Error("Falha ao cancelar o agendamento.");
+	}
 	return response.json();
 };
 
@@ -93,4 +107,3 @@ export const toggleBarberStatus = async (id, isActive) => {
 	if (!response.ok) throw new Error("Falha ao alterar status do barbeiro");
 	return response.json();
 };
-

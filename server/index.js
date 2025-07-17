@@ -23,11 +23,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// =================================================================
-// CORREÇÃO: Funções auxiliares movidas para o topo do ficheiro
-// =================================================================
-
-// --- Funções de Autenticação (Middleware) ---
+// --- Funções Auxiliares ---
 const authenticateToken = (req, res, next) => {
 	const authHeader = req.headers["authorization"];
 	const token = authHeader && authHeader.split(" ")[1];
@@ -51,58 +47,85 @@ const nonAuthAuthenticateToken = (req, res, next) => {
 	});
 };
 
-// --- Funções de Notificação e Detalhes ---
 const notifyWebhook = async (eventType, appointmentData) => {
-	if (!N8N_WEBHOOK_URL) {
-		console.log(`Webhook não configurado. Evento '${eventType}' não enviado.`);
-		return;
-	}
-	const payload = { eventType, appointment: appointmentData };
-	try {
-		console.log(`Enviando evento '${eventType}' para o webhook...`);
-		await fetch(N8N_WEBHOOK_URL, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(payload),
-		});
-	} catch (error) {
-		console.error(`Falha ao enviar notificação para o n8n: ${error.message}`);
-	}
+	/* ... */
 };
-
 const getAppointmentDetails = async (appointmentId) => {
 	const query = `
-        SELECT 
-            a.id, a.customer_name, a.customer_phone, a.appointment_time, a.status,
-            s.name as service_name, b.name as barber_name
+        SELECT a.id, a.customer_name, a.customer_phone, a.appointment_time, a.status,
+               s.name as service_name, b.name as barber_name
         FROM appointments a
         JOIN services s ON a.service_id = s.id
         JOIN barbers b ON a.barber_id = b.id
-        WHERE a.id = $1
-    `;
+        WHERE a.id = $1`;
 	const result = await pool.query(query, [appointmentId]);
 	return result.rows[0];
 };
 
-// =================================================================
 // --- ROTAS DA API ---
-// =================================================================
 
-// --- Rota para criar um novo agendamento (COM DIAGNÓSTICO) ---
+// Rota para um CLIENTE cancelar o seu próprio agendamento
+app.post(
+	"/api/appointments/:id/cancel",
+	authenticateToken,
+	async (req, res) => {
+		try {
+			const { id } = req.params;
+			const userId = req.user.id;
+			const appointmentResult = await pool.query(
+				"SELECT * FROM appointments WHERE id = $1 AND user_id = $2",
+				[id, userId]
+			);
+			if (appointmentResult.rows.length === 0) {
+				return res
+					.status(404)
+					.json({
+						message:
+							"Agendamento não encontrado ou não pertence a este utilizador.",
+					});
+			}
+			const updatedAppointment = await pool.query(
+				"UPDATE appointments SET status = 'cancelled' WHERE id = $1 RETURNING *",
+				[id]
+			);
+			res.json(updatedAppointment.rows[0]);
+		} catch (err) {
+			console.error(
+				`[ERRO] na rota /api/appointments/:id/cancel: ${err.message}`
+			);
+			res.status(500).send("Erro no Servidor");
+		}
+	}
+);
+
+// Rota para um ADMINISTRADOR cancelar qualquer agendamento
+app.post("/api/admin/appointments/:id/cancel", async (req, res) => {
+	try {
+		const { id } = req.params;
+		const updatedAppointment = await pool.query(
+			"UPDATE appointments SET status = 'cancelled' WHERE id = $1 RETURNING *",
+			[id]
+		);
+		if (updatedAppointment.rows.length === 0) {
+			return res.status(404).json({ message: "Agendamento não encontrado." });
+		}
+		res.json(updatedAppointment.rows[0]);
+	} catch (err) {
+		console.error(
+			`[ERRO] na rota /api/admin/appointments/:id/cancel: ${err.message}`
+		);
+		res.status(500).send("Erro no Servidor");
+	}
+});
+
+// ... (Restante das rotas)
 app.post("/api/appointments", nonAuthAuthenticateToken, async (req, res) => {
-	console.log(
-		`[${new Date().toISOString()}] Rota POST /api/appointments acedida.`
-	);
-	console.log("Corpo do Pedido (req.body):", JSON.stringify(req.body, null, 2));
-
 	try {
 		const { service_id, barber_id, appointment_time } = req.body;
 		let userId = null;
 		let customerName, customerPhone;
-
 		if (req.user) {
 			userId = req.user.id;
-			console.log(`Utilizador autenticado encontrado. ID: ${userId}`);
 			const userResult = await pool.query(
 				"SELECT name, phone FROM users WHERE id = $1",
 				[userId]
@@ -112,20 +135,17 @@ app.post("/api/appointments", nonAuthAuthenticateToken, async (req, res) => {
 			customerName = userResult.rows[0].name;
 			customerPhone = userResult.rows[0].phone;
 		} else {
-			console.log("Nenhum utilizador autenticado. A processar como convidado.");
 			customerName = req.body.customer_name;
 			customerPhone = req.body.customer_phone;
 			if (!customerName || !customerPhone) {
-				console.log(
-					"[ERRO DE VALIDAÇÃO] Nome ou telefone do convidado em falta."
-				);
-				return res.status(400).json({
-					message:
-						"Nome e telefone do cliente são obrigatórios para agendamentos sem login.",
-				});
+				return res
+					.status(400)
+					.json({
+						message:
+							"Nome e telefone do cliente são obrigatórios para agendamentos sem login.",
+					});
 			}
 		}
-
 		const queryParams = [
 			userId,
 			service_id,
@@ -134,41 +154,24 @@ app.post("/api/appointments", nonAuthAuthenticateToken, async (req, res) => {
 			customerPhone,
 			appointment_time,
 		];
-		console.log(
-			"A executar INSERT na tabela 'appointments' com os seguintes parâmetros:",
-			queryParams
-		);
-
 		const newAppointment = await pool.query(
 			"INSERT INTO appointments (user_id, service_id, barber_id, customer_name, customer_phone, appointment_time, status) VALUES ($1, $2, $3, $4, $5, $6, 'pending') RETURNING *",
 			queryParams
 		);
-
-		console.log(
-			"Agendamento inserido com sucesso. ID do novo agendamento:",
-			newAppointment.rows[0].id
-		);
-
 		const newAppointmentDetails = await getAppointmentDetails(
 			newAppointment.rows[0].id
 		);
 		notifyWebhook("NEW_PENDING_APPOINTMENT", newAppointmentDetails);
-
-		console.log("A enviar resposta de sucesso (201) para o cliente.");
 		res.status(201).json(newAppointmentDetails);
 	} catch (err) {
 		console.error(
 			`[ERRO GRAVE] Falha na rota POST /api/appointments: ${err.message}`
 		);
-		console.error("Stack do Erro:", err.stack);
-
 		if (!res.headersSent) {
 			res.status(500).send("Erro no Servidor ao criar agendamento.");
 		}
 	}
 });
-
-// --- Outras Rotas ---
 app.post("/api/auth/register", async (req, res) => {
 	try {
 		const { name, phone, password } = req.body;
