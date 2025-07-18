@@ -1,5 +1,4 @@
-// A URL base para as rotas da nossa API pública
-const API_BASE_URL = "http://31.97.171.200:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 /**
  * Busca todos os serviços ativos.

@@ -1,14 +1,27 @@
-// A URL base para as rotas de administração da nossa API
-const API_URL = "http://31.97.171.200:5000/api/admin";
+const ADMIN_API_URL = `${import.meta.env.VITE_API_URL}/admin`;
+
+// Nova função para autenticar o administrador
+export const loginAdmin = async (password) => {
+	const response = await fetch(`${ADMIN_API_URL}/login`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ password }),
+	});
+	if (!response.ok) {
+		const errorData = await response.json();
+		throw new Error(errorData.message || "Falha na autenticação");
+	}
+	return response.json();
+};
 
 export const getAppointments = async () => {
-	const response = await fetch(`${API_URL}/appointments`);
+	const response = await fetch(`${ADMIN_API_URL}/appointments`);
 	if (!response.ok) throw new Error("Falha ao buscar agendamentos");
 	return response.json();
 };
 
 export const confirmAppointment = async (id) => {
-	const response = await fetch(`${API_URL}/appointments/${id}/confirm`, {
+	const response = await fetch(`${ADMIN_API_URL}/appointments/${id}/confirm`, {
 		method: "POST",
 	});
 	if (!response.ok) throw new Error("Falha ao confirmar agendamento");
@@ -16,7 +29,7 @@ export const confirmAppointment = async (id) => {
 };
 
 export const denyAppointment = async (id) => {
-	const response = await fetch(`${API_URL}/appointments/${id}/deny`, {
+	const response = await fetch(`${ADMIN_API_URL}/appointments/${id}/deny`, {
 		method: "POST",
 	});
 	if (!response.ok) throw new Error("Falha ao recusar agendamento");
@@ -25,7 +38,7 @@ export const denyAppointment = async (id) => {
 
 export const cancelAppointmentByAdmin = async (appointmentId) => {
 	const response = await fetch(
-		`${API_URL}/appointments/${appointmentId}/cancel`,
+		`${ADMIN_API_URL}/appointments/${appointmentId}/cancel`,
 		{
 			method: "POST",
 		}
@@ -37,13 +50,13 @@ export const cancelAppointmentByAdmin = async (appointmentId) => {
 };
 
 export const getAllServices = async () => {
-	const response = await fetch(`${API_URL}/services`);
+	const response = await fetch(`${ADMIN_API_URL}/services`);
 	if (!response.ok) throw new Error("Falha ao buscar serviços");
 	return response.json();
 };
 
 export const addService = async (service) => {
-	const response = await fetch(`${API_URL}/services`, {
+	const response = await fetch(`${ADMIN_API_URL}/services`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(service),
@@ -53,7 +66,7 @@ export const addService = async (service) => {
 };
 
 export const updateService = async (id, service) => {
-	const response = await fetch(`${API_URL}/services/${id}`, {
+	const response = await fetch(`${ADMIN_API_URL}/services/${id}`, {
 		method: "PUT",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(service),
@@ -63,23 +76,23 @@ export const updateService = async (id, service) => {
 };
 
 export const toggleServiceStatus = async (id, isActive) => {
-	const response = await fetch(`${API_URL}/services/${id}/status`, {
+	const response = await fetch(`${ADMIN_API_URL}/services/${id}/status`, {
 		method: "PATCH",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ is_active: isActive }),
 	});
-	if (!response.ok) throw new Error("Falha ao alterar status do serviço");
+	if (!response.ok) throw new Error("Falha ao alterar status do serviço.");
 	return response.json();
 };
 
 export const getAllBarbers = async () => {
-	const response = await fetch(`${API_URL}/barbers`);
+	const response = await fetch(`${ADMIN_API_URL}/barbers`);
 	if (!response.ok) throw new Error("Falha ao buscar barbeiros");
 	return response.json();
 };
 
 export const addBarber = async (barber) => {
-	const response = await fetch(`${API_URL}/barbers`, {
+	const response = await fetch(`${ADMIN_API_URL}/barbers`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(barber),
@@ -89,7 +102,7 @@ export const addBarber = async (barber) => {
 };
 
 export const updateBarber = async (id, barber) => {
-	const response = await fetch(`${API_URL}/barbers/${id}`, {
+	const response = await fetch(`${ADMIN_API_URL}/barbers/${id}`, {
 		method: "PUT",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(barber),
@@ -99,11 +112,32 @@ export const updateBarber = async (id, barber) => {
 };
 
 export const toggleBarberStatus = async (id, isActive) => {
-	const response = await fetch(`${API_URL}/barbers/${id}/status`, {
+	const response = await fetch(`${ADMIN_API_URL}/barbers/${id}/status`, {
 		method: "PATCH",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ is_active: isActive }),
 	});
 	if (!response.ok) throw new Error("Falha ao alterar status do barbeiro");
+	return response.json();
+};
+export const deleteService = async (id) => {
+	const response = await fetch(`${ADMIN_API_URL}/services/${id}`, {
+		method: "DELETE",
+	});
+	if (!response.ok) {
+		const errorData = await response.json();
+		throw new Error(errorData.message || "Falha ao excluir serviço");
+	}
+	return response.json();
+};
+
+export const deleteBarber = async (id) => {
+	const response = await fetch(`${ADMIN_API_URL}/barbers/${id}`, {
+		method: "DELETE",
+	});
+	if (!response.ok) {
+		const errorData = await response.json();
+		throw new Error(errorData.message || "Falha ao excluir barbeiro");
+	}
 	return response.json();
 };

@@ -1,3 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Adiciona esta regra para corrigir o fundo branco */
+html,
+body,
+#root {
+  height: 100%;
+  background-color: #111827; /* Cor de fundo base (gray-900) */
+}

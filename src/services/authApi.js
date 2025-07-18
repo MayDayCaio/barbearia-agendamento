@@ -1,7 +1,7 @@
-const API_URL = "http://31.97.171.200:5000/api/auth";
+const AUTH_API_URL = `${import.meta.env.VITE_API_URL}/auth`;
 
 export const login = async (credentials) => {
-	const response = await fetch(`${API_URL}/login`, {
+	const response = await fetch(`${AUTH_API_URL}/login`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(credentials),
@@ -14,7 +14,7 @@ export const login = async (credentials) => {
 };
 
 export const register = async (userData) => {
-	const response = await fetch(`${API_URL}/register`, {
+	const response = await fetch(`${AUTH_API_URL}/register`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(userData),
