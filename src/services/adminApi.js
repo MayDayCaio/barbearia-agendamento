@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 const ADMIN_API_URL = `${import.meta.env.VITE_API_URL}/admin`;
 
 // Nova função para autenticar o administrador
@@ -13,6 +14,10 @@ export const loginAdmin = async (password) => {
 	}
 	return response.json();
 };
+=======
+// A URL base para as rotas de administração da nossa API
+const API_URL = "http://31.97.171.200:5000/api/admin";
+>>>>>>> cc3ff78 (v)
 
 export const getAppointments = async () => {
 	const response = await fetch(`${ADMIN_API_URL}/appointments`);
@@ -38,7 +43,11 @@ export const denyAppointment = async (id) => {
 
 export const cancelAppointmentByAdmin = async (appointmentId) => {
 	const response = await fetch(
+<<<<<<< HEAD
 		`${ADMIN_API_URL}/appointments/${appointmentId}/cancel`,
+=======
+		`${API_URL}/appointments/${appointmentId}/cancel`,
+>>>>>>> cc3ff78 (v)
 		{
 			method: "POST",
 		}
@@ -120,6 +129,7 @@ export const toggleBarberStatus = async (id, isActive) => {
 	if (!response.ok) throw new Error("Falha ao alterar status do barbeiro");
 	return response.json();
 };
+<<<<<<< HEAD
 export const deleteService = async (id) => {
 	const response = await fetch(`${ADMIN_API_URL}/services/${id}`, {
 		method: "DELETE",
@@ -141,3 +151,5 @@ export const deleteBarber = async (id) => {
 	}
 	return response.json();
 };
+=======
+>>>>>>> cc3ff78 (v)

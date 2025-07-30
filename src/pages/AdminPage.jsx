@@ -2,7 +2,10 @@ import React, { useState, useEffect } from "react";
 import * as adminApi from "../services/adminApi";
 import { formatDateTime } from "../utils/formatters";
 import StatusBadge from "../components/ui/StatusBadge";
+<<<<<<< HEAD:src/pages/AdminPage.jsx
 import { Edit, Trash2, ToggleLeft, ToggleRight, LogOut } from "lucide-react";
+=======
+>>>>>>> cc3ff78 (v):src/pages/AdminPage.js
 
 const AdminPage = () => {
 	const [services, setServices] = useState([]);
@@ -56,12 +59,18 @@ const AdminPage = () => {
 		setPassword(e.target.value);
 		setAuthError("");
 	};
+<<<<<<< HEAD:src/pages/AdminPage.jsx
 
 	const handlePasswordSubmit = async (e) => {
 		e.preventDefault();
 		setAuthError("");
 		try {
 			await adminApi.loginAdmin(password);
+=======
+	const handlePasswordSubmit = (e) => {
+		e.preventDefault();
+		if (password === "admin") {
+>>>>>>> cc3ff78 (v):src/pages/AdminPage.js
 			setIsAuthenticated(true);
 			sessionStorage.setItem("isAdminAuthenticated", "true");
 			fetchData();
@@ -69,6 +78,7 @@ const AdminPage = () => {
 			setAuthError(err.message || "Senha incorreta.");
 		}
 	};
+<<<<<<< HEAD:src/pages/AdminPage.jsx
 
 	const handleLogout = () => {
 		sessionStorage.removeItem("isAdminAuthenticated");
@@ -77,6 +87,8 @@ const AdminPage = () => {
 		setAuthError("");
 	};
 
+=======
+>>>>>>> cc3ff78 (v):src/pages/AdminPage.js
 	const handleConfirmAppointment = async (id) => {
 		try {
 			await adminApi.confirmAppointment(id);
@@ -85,7 +97,6 @@ const AdminPage = () => {
 			setError("Falha ao confirmar o agendamento.");
 		}
 	};
-
 	const handleDenyAppointment = async (id) => {
 		try {
 			await adminApi.denyAppointment(id);
@@ -94,7 +105,10 @@ const AdminPage = () => {
 			setError("Falha ao recusar o agendamento.");
 		}
 	};
+<<<<<<< HEAD:src/pages/AdminPage.jsx
 
+=======
+>>>>>>> cc3ff78 (v):src/pages/AdminPage.js
 	const handleCancelByAdmin = async (appointmentId) => {
 		if (
 			window.confirm("Tem a certeza de que deseja cancelar este agendamento?")
@@ -108,12 +122,14 @@ const AdminPage = () => {
 			}
 		}
 	};
+<<<<<<< HEAD:src/pages/AdminPage.jsx
 
+=======
+>>>>>>> cc3ff78 (v):src/pages/AdminPage.js
 	const handleNewServiceChange = (e) => {
 		const { name, value } = e.target;
 		setNewService((prevState) => ({ ...prevState, [name]: value }));
 	};
-
 	const handleAddService = async (e) => {
 		e.preventDefault();
 		try {
@@ -124,7 +140,6 @@ const AdminPage = () => {
 			setError("Falha ao adicionar serviço.");
 		}
 	};
-
 	const handleToggleServiceStatus = async (id, currentStatus) => {
 		try {
 			await adminApi.toggleServiceStatus(id, !currentStatus);
@@ -133,12 +148,10 @@ const AdminPage = () => {
 			setError("Falha ao alterar status do serviço.");
 		}
 	};
-
 	const handleEditServiceChange = (e) => {
 		const { name, value } = e.target;
 		setEditingService((prevState) => ({ ...prevState, [name]: value }));
 	};
-
 	const handleUpdateService = async (e) => {
 		e.preventDefault();
 		try {
@@ -153,6 +166,7 @@ const AdminPage = () => {
 			setError("Falha ao atualizar serviço.");
 		}
 	};
+<<<<<<< HEAD:src/pages/AdminPage.jsx
 
 	const handleDeleteService = async (serviceId) => {
 		if (
@@ -170,10 +184,11 @@ const AdminPage = () => {
 		}
 	};
 
+=======
+>>>>>>> cc3ff78 (v):src/pages/AdminPage.js
 	const handleNewBarberChange = (e) => {
 		setNewBarber({ name: e.target.value });
 	};
-
 	const handleAddBarber = async (e) => {
 		e.preventDefault();
 		try {
@@ -184,7 +199,6 @@ const AdminPage = () => {
 			setError("Falha ao adicionar barbeiro.");
 		}
 	};
-
 	const handleToggleBarberStatus = async (id, currentStatus) => {
 		try {
 			await adminApi.toggleBarberStatus(id, !currentStatus);
@@ -193,11 +207,9 @@ const AdminPage = () => {
 			setError("Falha ao alterar status do barbeiro.");
 		}
 	};
-
 	const handleEditBarberChange = (e) => {
 		setEditingBarber((prevState) => ({ ...prevState, name: e.target.value }));
 	};
-
 	const handleUpdateBarber = async (e) => {
 		e.preventDefault();
 		try {
@@ -211,6 +223,7 @@ const AdminPage = () => {
 		}
 	};
 
+<<<<<<< HEAD:src/pages/AdminPage.jsx
 	const handleDeleteBarber = async (barberId) => {
 		if (
 			window.confirm(
@@ -231,6 +244,8 @@ const AdminPage = () => {
 		return <p className="text-center text-white p-8">A carregar...</p>;
 	}
 
+=======
+>>>>>>> cc3ff78 (v):src/pages/AdminPage.js
 	if (!isAuthenticated) {
 		return (
 			<div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">
@@ -272,6 +287,7 @@ const AdminPage = () => {
 
 	return (
 		<div className="container mx-auto p-4 sm:p-6 lg:p-8 bg-gray-900 text-white min-h-screen">
+<<<<<<< HEAD:src/pages/AdminPage.jsx
 			<div className="flex justify-between items-center mb-8 border-b border-gray-700 pb-4">
 				<h1 className="text-3xl font-bold">Painel de Administração</h1>
 				<button
@@ -282,6 +298,11 @@ const AdminPage = () => {
 					<span>Sair</span>
 				</button>
 			</div>
+=======
+			<h1 className="text-3xl font-bold mb-8 border-b border-gray-700 pb-4">
+				Painel de Administração
+			</h1>
+>>>>>>> cc3ff78 (v):src/pages/AdminPage.js
 			{loading && <p>A carregar...</p>}
 			{error && (
 				<p className="text-red-500 bg-red-200 p-3 rounded-md mb-4">{error}</p>

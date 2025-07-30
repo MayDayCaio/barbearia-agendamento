@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 const ConnectionTester = () => {
 	const [status, setStatus] = useState("A testar conexão com o backend...");
 	const [style, setStyle] = useState({
-		backgroundColor: "#f0ad4e",
+		backgroundColor: "#eb8b04ff",
 		color: "white",
 	}); // Laranja (A testar)
 
