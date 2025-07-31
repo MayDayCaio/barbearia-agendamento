@@ -17,8 +17,7 @@ const ConfirmationModal = ({ isOpen, onClose }) => {
 				</h2>
 				<p className="text-gray-300 mb-6">
 					O seu pedido foi enviado para a nossa equipa. Em breve, receberá uma
-					notificação de confirmação via{" "}
-					<span className="font-semibold text-green-400">WhatsApp</span>.
+					notificação de confirmação via
 				</p>
 
 				{/* Secção de incentivo ao registo, só aparece se o utilizador não estiver logado */}
